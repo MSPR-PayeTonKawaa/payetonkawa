@@ -1,0 +1,143 @@
+# ================================
+# PAYETONKAWA - GITIGNORE COMPLET
+# ================================
+
+# Variables d'environnement et secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets/
+config/secrets.yml
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Build et dist
+dist/
+build/
+out/
+*.tsbuildinfo
+.cache/
+
+# Logs
+logs/
+*.log
+log/
+.npm
+.eslintcache
+
+# Runtime et process
+.pid
+.seed
+.pid.lock
+pids/
+
+# Coverage et tests
+coverage/
+.nyc_output/
+.coverage/
+*.lcov
+test-results/
+junit.xml
+
+# IDEs et éditeurs
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Docker et conteneurisation
+.docker/
+docker-compose.override.yml
+.env.docker
+Dockerfile.dev
+volumes/
+
+# Base de données
+*.sqlite
+*.sqlite3
+*.db
+database/
+data/
+pgdata/
+mysql-data/
+
+# Monitoring et métriques
+grafana/data/
+prometheus/data/
+logs/
+metrics/
+*.metrics
+
+# RabbitMQ
+rabbitmq/data/
+rabbitmq/logs/
+rabbitmq/mnesia/
+
+# Backup et temporaires
+*.backup
+*.bak
+*.tmp
+*.temp
+temp/
+tmp/
+.temp/
+
+# OS et système
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Packages et archives
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Certificats et clés
+*.crt
+*.csr
+*.p12
+*.pfx
+*.pem
+*.key
+ssl/
+
+# Documentation générée
+docs/generated/
+api-docs/
+.docusaurus/
+
+# Autres
+.yarn/
+.pnp.*
+.zero-installs
+
+# Fichiers spécifiques PayeTonKawa
+test-results/
+validation-reports/
+performance-logs/
+security-audit/ 

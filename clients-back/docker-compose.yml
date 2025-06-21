@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  clients-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: payetonkawa-clients-api
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=clients-db
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=password
+      - DB_NAME=clients_db
+      - DATABASE_URL=postgresql://postgres:password@clients-db:5432/clients_db
+      - JWT_SECRET=your-jwt-secret-key
+      - RABBITMQ_URL=amqp://guest:guest@payetonkawa-rabbitmq:5672
+    depends_on:
+      - clients-db
+    networks:
+      - payetonkawa-network
+    volumes:
+      - .:/app
+      - /app/node_modules
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  clients-db:
+    image: postgres:15-alpine
+    container_name: payetonkawa-clients-db
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: clients_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - clients_db_data:/var/lib/postgresql/data
+    networks:
+      - payetonkawa-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  clients_db_data:
+    driver: local
+
+networks:
+  payetonkawa-network:
+    external: true 

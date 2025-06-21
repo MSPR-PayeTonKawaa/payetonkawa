@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  commandes-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: payetonkawa-commandes-api
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=commandes-db
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=password
+      - DB_NAME=commandes_db
+      - DATABASE_URL=postgresql://postgres:password@commandes-db:5432/commandes_db
+      - JWT_SECRET=your-jwt-secret-key
+      - RABBITMQ_URL=amqp://guest:guest@payetonkawa-rabbitmq:5672
+      - CLIENTS_API_URL=http://payetonkawa-clients-api:3001
+      - PRODUITS_API_URL=http://payetonkawa-produits-api:3002
+    depends_on:
+      - commandes-db
+    networks:
+      - payetonkawa-network
+    volumes:
+      - .:/app
+      - /app/node_modules
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  commandes-db:
+    image: postgres:15-alpine
+    container_name: payetonkawa-commandes-db
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_DB: commandes_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - commandes_db_data:/var/lib/postgresql/data
+
+    networks:
+      - payetonkawa-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  commandes_db_data:
+    driver: local
+
+networks:
+  payetonkawa-network:
+    external: true 

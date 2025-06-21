@@ -1,0 +1,222 @@
+{
+  "rabbit_version": "3.12.0",
+  "rabbitmq_version": "3.12.0",
+  "product_name": "RabbitMQ",
+  "product_version": "3.12.0",
+  "users": [
+    {
+      "name": "payetonkawa",
+      "password_hash": "ibuYiW4mOBPl7uGOUOqGjQsGlsNKIWOBYdqcDvJWKyFBJFPD",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": ["administrator", "management"]
+    }
+  ],
+  "vhosts": [
+    {
+      "name": "/payetonkawa"
+    }
+  ],
+  "permissions": [
+    {
+      "user": "payetonkawa",
+      "vhost": "/payetonkawa",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
+  ],
+  "topic_permissions": [],
+  "parameters": [],
+  "global_parameters": [
+    {
+      "name": "cluster_name",
+      "value": "payetonkawa-cluster"
+    }
+  ],
+  "policies": [
+    {
+      "vhost": "/payetonkawa",
+      "name": "ha-all",
+      "pattern": ".*",
+      "apply-to": "all",
+      "definition": {
+        "ha-mode": "all",
+        "ha-sync-mode": "automatic"
+      },
+      "priority": 0
+    }
+  ],
+  "exchanges": [
+    {
+      "name": "payetonkawa.events",
+      "vhost": "/payetonkawa",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "payetonkawa.dlx",
+      "vhost": "/payetonkawa",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "payetonkawa.retry",
+      "vhost": "/payetonkawa",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+  "queues": [
+    {
+      "name": "customer.events",
+      "vhost": "/payetonkawa",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "payetonkawa.dlx",
+        "x-dead-letter-routing-key": "customer.dlq",
+        "x-message-ttl": 3600000,
+        "x-max-retries": 3
+      }
+    },
+    {
+      "name": "product.events",
+      "vhost": "/payetonkawa",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "payetonkawa.dlx",
+        "x-dead-letter-routing-key": "product.dlq",
+        "x-message-ttl": 3600000,
+        "x-max-retries": 3
+      }
+    },
+    {
+      "name": "order.events",
+      "vhost": "/payetonkawa",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "payetonkawa.dlx",
+        "x-dead-letter-routing-key": "order.dlq",
+        "x-message-ttl": 3600000,
+        "x-max-retries": 3
+      }
+    },
+    {
+      "name": "stock.updates",
+      "vhost": "/payetonkawa",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "payetonkawa.dlx",
+        "x-dead-letter-routing-key": "stock.dlq",
+        "x-message-ttl": 3600000,
+        "x-max-retries": 3
+      }
+    },
+    {
+      "name": "customer.dlq",
+      "vhost": "/payetonkawa",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "product.dlq",
+      "vhost": "/payetonkawa",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "order.dlq",
+      "vhost": "/payetonkawa",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "stock.dlq",
+      "vhost": "/payetonkawa",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    }
+  ],
+  "bindings": [
+    {
+      "source": "payetonkawa.events",
+      "vhost": "/payetonkawa",
+      "destination": "customer.events",
+      "destination_type": "queue",
+      "routing_key": "customer.*",
+      "arguments": {}
+    },
+    {
+      "source": "payetonkawa.events",
+      "vhost": "/payetonkawa",
+      "destination": "product.events",
+      "destination_type": "queue",
+      "routing_key": "product.*",
+      "arguments": {}
+    },
+    {
+      "source": "payetonkawa.events",
+      "vhost": "/payetonkawa",
+      "destination": "order.events",
+      "destination_type": "queue",
+      "routing_key": "order.*",
+      "arguments": {}
+    },
+    {
+      "source": "payetonkawa.events",
+      "vhost": "/payetonkawa",
+      "destination": "stock.updates",
+      "destination_type": "queue",
+      "routing_key": "stock.*",
+      "arguments": {}
+    },
+    {
+      "source": "payetonkawa.dlx",
+      "vhost": "/payetonkawa",
+      "destination": "customer.dlq",
+      "destination_type": "queue",
+      "routing_key": "customer.dlq",
+      "arguments": {}
+    },
+    {
+      "source": "payetonkawa.dlx",
+      "vhost": "/payetonkawa",
+      "destination": "product.dlq",
+      "destination_type": "queue",
+      "routing_key": "product.dlq",
+      "arguments": {}
+    },
+    {
+      "source": "payetonkawa.dlx",
+      "vhost": "/payetonkawa",
+      "destination": "order.dlq",
+      "destination_type": "queue",
+      "routing_key": "order.dlq",
+      "arguments": {}
+    },
+    {
+      "source": "payetonkawa.dlx",
+      "vhost": "/payetonkawa",
+      "destination": "stock.dlq",
+      "destination_type": "queue",
+      "routing_key": "stock.dlq",
+      "arguments": {}
+    }
+  ]
+} 

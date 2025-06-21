@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: payetonkawa-rabbitmq
+    hostname: payetonkawa-rabbitmq
+    ports:
+      - "5672:5672"      # AMQP port
+      - "15672:15672"    # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: payetonkawa
+      RABBITMQ_DEFAULT_PASS: rabbitmq123
+      RABBITMQ_DEFAULT_VHOST: /payetonkawa
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - payetonkawa-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    labels:
+      - "traefik.enable=false"
+      - "com.payetonkawa.service=message-broker"
+      - "com.payetonkawa.description=RabbitMQ Message Broker for microservices communication"
+
+volumes:
+  rabbitmq_data:
+    driver: local
+    labels:
+      - "com.payetonkawa.volume=rabbitmq-data"
+
+networks:
+  payetonkawa-network:
+    external: true 
