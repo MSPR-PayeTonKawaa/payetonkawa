@@ -15,8 +15,9 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('should return service info', () => {
+      const result = appController.getServiceInfo();
+      expect(result).toHaveProperty('service', 'PayeTonKawa - API Commandes');
     });
   });
 });

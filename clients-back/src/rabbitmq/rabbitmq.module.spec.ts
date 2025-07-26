@@ -11,6 +11,8 @@ jest.mock('@nestjs/typeorm', () => ({
       module: class MockTypeOrmFeatureModule {},
     })),
   },
+  InjectRepository: jest.fn(() => () => {}),
+  getRepositoryToken: jest.fn((entity) => `${entity}Repository`),
 }));
 
 // Mock ConfigModule

@@ -4,7 +4,7 @@ import { IsUUID, IsNumber, IsPositive, Min } from 'class-validator';
 export class CreateOrderItemDto {
   @ApiProperty({
     description: 'Identifiant du produit à commander',
-    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+    example: '550e8400-e29b-41d4-a716-446655440000'
   })
   @IsUUID('4', { message: 'L\'identifiant du produit doit être un UUID valide' })
   productId: string;

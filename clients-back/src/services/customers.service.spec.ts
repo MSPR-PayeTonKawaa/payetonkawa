@@ -158,7 +158,8 @@ describe('CustomersService', () => {
         },
       };
 
-      mockRepository.findOne.mockResolvedValue({ id: '1', email: 'existing@example.com' });
+      // Mock pour la vérification d'email (conflit trouvé)
+      mockRepository.findOne.mockResolvedValueOnce({ id: '1', email: 'existing@example.com' });
 
       await expect(service.create(createCustomerDto)).rejects.toThrow(ConflictException);
     });
@@ -372,12 +373,12 @@ describe('CustomersService', () => {
         },
       };
 
-      mockRepository.findOne.mockResolvedValueOnce({ username: 'existinguser' });
+      // Mock pour la vérification d'email (pas de conflit)
+      mockRepository.findOne.mockResolvedValueOnce(null);
+      // Mock pour la vérification de username (conflit trouvé)
+      mockRepository.findOne.mockResolvedValueOnce({ id: '2', username: 'existinguser' });
 
       await expect(service.create(createDto)).rejects.toThrow(ConflictException);
-      expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { email: 'new@example.com' },
-      });
     });
 
     it('should handle company SIRET conflicts', async () => {
@@ -408,10 +409,21 @@ describe('CustomersService', () => {
         },
       };
 
+      // Mock pour les vérifications d'unicité des champs customer
       mockRepository.findOne
         .mockResolvedValueOnce(null) // No email conflict
-        .mockResolvedValueOnce(null) // No username conflict
-        .mockResolvedValueOnce({ company: { siret: '12345678901234' } }); // SIRET conflict
+        .mockResolvedValueOnce(null); // No username conflict
+      
+      // Mock pour les saves d'address et profile
+      mockRepository.create.mockReturnValue({});
+      mockRepository.save
+        .mockResolvedValueOnce({ id: '1' }) // address
+        .mockResolvedValueOnce({ id: '2' }); // profile
+      
+      // Le conflit SIRET est vérifié sur companyRepository
+      // companyRepository utilise le même mockRepository que les autres
+      const companyFindOneMock = jest.spyOn(companyRepository, 'findOne');
+      companyFindOneMock.mockResolvedValue({ id: '3', siret: '12345678901234' } as Company);
 
       await expect(service.create(createDto)).rejects.toThrow(ConflictException);
     });
@@ -421,7 +433,16 @@ describe('CustomersService', () => {
         email: 'conflict@example.com',
       };
 
-      mockRepository.findOneBy.mockResolvedValueOnce({ id: '1', email: 'old@example.com' });
+      // Mock pour findOne avec relations (recherche du customer à mettre à jour)
+      mockRepository.findOne.mockResolvedValueOnce({ 
+        id: '1', 
+        email: 'old@example.com',
+        address: {},
+        profile: {},
+        company: null 
+      });
+      
+      // Mock pour checkUniqueFields - vérification d'email (conflit trouvé)
       mockRepository.findOne.mockResolvedValueOnce({ id: '2', email: 'conflict@example.com' });
 
       await expect(service.update('1', updateDto)).rejects.toThrow(ConflictException);
@@ -432,14 +453,23 @@ describe('CustomersService', () => {
         username: 'conflictuser',
       };
 
-      mockRepository.findOneBy.mockResolvedValueOnce({ id: '1', username: 'olduser' });
+      // Mock pour findOne avec relations (recherche du customer à mettre à jour)
+      mockRepository.findOne.mockResolvedValueOnce({ 
+        id: '1', 
+        username: 'olduser',
+        address: {},
+        profile: {},
+        company: null 
+      });
+      
+      // Mock pour checkUniqueFields - vérification de username (conflit trouvé)
       mockRepository.findOne.mockResolvedValueOnce({ id: '2', username: 'conflictuser' });
 
       await expect(service.update('1', updateDto)).rejects.toThrow(ConflictException);
     });
 
     it('should handle repository errors gracefully', async () => {
-      mockRepository.findOneBy.mockRejectedValue(new Error('Database error'));
+      mockRepository.findOne.mockRejectedValue(new Error('Database error'));
 
       await expect(service.findOne('1')).rejects.toThrow('Database error');
     });

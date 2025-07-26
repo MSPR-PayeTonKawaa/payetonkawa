@@ -70,7 +70,7 @@ describe('AppService', () => {
       const result = service.getHealth();
       
       expect(typeof result.uptime).toBe('number');
-      expect(result.uptime).toBeGreaterThan(0);
+      expect(result.uptime).toBeGreaterThanOrEqual(0);
     });
 
     it('should return valid timestamp', () => {

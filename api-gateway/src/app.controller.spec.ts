@@ -15,8 +15,9 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('should return welcome message', () => {
+      const result = appController.getWelcome();
+      expect(result).toHaveProperty('message', "Bienvenue sur l'API Gateway PayeTonKawa");
     });
   });
 });
