@@ -236,4 +236,184 @@ describe('OrderItem Entity', () => {
       expect(orderItem.isValid()).toBe(true);
     });
   });
+
+  describe('Additional Method Coverage', () => {
+    beforeEach(() => {
+      orderItem.orderId = 'order-123';
+      orderItem.productId = 'product-456';
+      orderItem.quantity = 2;
+      orderItem.unitPrice = 25.99;
+    });
+
+    describe('updateQuantity()', () => {
+      it('should update quantity and recalculate total price', () => {
+        orderItem.updateQuantity(5);
+        expect(orderItem.quantity).toBe(5);
+        expect(orderItem.totalPrice).toBe(129.95); // 5 * 25.99
+      });
+
+      it('should handle fractional quantities', () => {
+        orderItem.updateQuantity(2.5);
+        expect(orderItem.quantity).toBe(2.5);
+        expect(orderItem.totalPrice).toBe(64.975); // 2.5 * 25.99
+      });
+
+      it('should throw error for zero quantity', () => {
+        expect(() => orderItem.updateQuantity(0)).toThrow('La quantité doit être supérieure à 0');
+      });
+
+      it('should throw error for negative quantity', () => {
+        expect(() => orderItem.updateQuantity(-1)).toThrow('La quantité doit être supérieure à 0');
+        expect(() => orderItem.updateQuantity(-5.5)).toThrow('La quantité doit être supérieure à 0');
+      });
+
+      it('should update totalPrice after quantity change', () => {
+        const originalTotal = orderItem.totalPrice;
+        orderItem.updateQuantity(4);
+        expect(orderItem.totalPrice).not.toBe(originalTotal);
+        expect(orderItem.totalPrice).toBe(103.96); // 4 * 25.99
+      });
+    });
+
+    describe('updateUnitPrice()', () => {
+      it('should update unit price and recalculate total price', () => {
+        orderItem.updateUnitPrice(19.99);
+        expect(orderItem.unitPrice).toBe(19.99);
+        expect(orderItem.totalPrice).toBe(39.98); // 2 * 19.99
+      });
+
+      it('should handle fractional prices', () => {
+        orderItem.updateUnitPrice(12.345);
+        expect(orderItem.unitPrice).toBe(12.345);
+        expect(orderItem.totalPrice).toBe(24.69); // 2 * 12.345
+      });
+
+      it('should throw error for zero price', () => {
+        expect(() => orderItem.updateUnitPrice(0)).toThrow('Le prix unitaire doit être supérieur à 0');
+      });
+
+      it('should throw error for negative price', () => {
+        expect(() => orderItem.updateUnitPrice(-1)).toThrow('Le prix unitaire doit être supérieur à 0');
+        expect(() => orderItem.updateUnitPrice(-10.50)).toThrow('Le prix unitaire doit être supérieur à 0');
+      });
+
+      it('should update totalPrice after price change', () => {
+        const originalTotal = orderItem.totalPrice;
+        orderItem.updateUnitPrice(50.00);
+        expect(orderItem.totalPrice).not.toBe(originalTotal);
+        expect(orderItem.totalPrice).toBe(100.00); // 2 * 50.00
+      });
+    });
+
+    describe('isValid()', () => {
+      it('should return true for valid order item', () => {
+        expect(orderItem.isValid()).toBe(true);
+      });
+
+      it('should return false when quantity is 0', () => {
+        orderItem.quantity = 0;
+        expect(orderItem.isValid()).toBe(false);
+      });
+
+      it('should return false when quantity is negative', () => {
+        orderItem.quantity = -1;
+        expect(orderItem.isValid()).toBe(false);
+      });
+
+      it('should return false when unitPrice is 0', () => {
+        orderItem.unitPrice = 0;
+        expect(orderItem.isValid()).toBe(false);
+      });
+
+      it('should return false when unitPrice is negative', () => {
+        orderItem.unitPrice = -5.99;
+        expect(orderItem.isValid()).toBe(false);
+      });
+
+      it('should return false when productId is missing', () => {
+        orderItem.productId = '';
+        expect(orderItem.isValid()).toBe(false);
+        
+        orderItem.productId = null as any;
+        expect(orderItem.isValid()).toBe(false);
+        
+        orderItem.productId = undefined as any;
+        expect(orderItem.isValid()).toBe(false);
+      });
+
+      it('should return false when orderId is missing', () => {
+        orderItem.orderId = '';
+        expect(orderItem.isValid()).toBe(false);
+        
+        orderItem.orderId = null as any;
+        expect(orderItem.isValid()).toBe(false);
+        
+        orderItem.orderId = undefined as any;
+        expect(orderItem.isValid()).toBe(false);
+      });
+
+      it('should handle all invalid combinations', () => {
+        orderItem.quantity = 0;
+        orderItem.unitPrice = 0;
+        orderItem.productId = '';
+        orderItem.orderId = '';
+        expect(orderItem.isValid()).toBe(false);
+      });
+    });
+
+    describe('getSummary()', () => {
+      it('should return correct summary format', () => {
+        const summary = orderItem.getSummary();
+        expect(summary).toBe('2 × 25.99€ = 51.98€');
+      });
+
+      it('should handle fractional quantities', () => {
+        orderItem.quantity = 1.5;
+        orderItem.unitPrice = 10.00;
+        const summary = orderItem.getSummary();
+        expect(summary).toBe('1.5 × 10€ = 15€');
+      });
+
+      it('should handle fractional prices', () => {
+        orderItem.quantity = 3;
+        orderItem.unitPrice = 12.345;
+        const summary = orderItem.getSummary();
+        expect(summary).toBe('3 × 12.345€ = 37.035000000000004€'); // Précision floating point
+      });
+
+      it('should handle high precision calculations', () => {
+        orderItem.quantity = 7;
+        orderItem.unitPrice = 9.99;
+        const summary = orderItem.getSummary();
+        expect(summary).toBe('7 × 9.99€ = 69.93€');
+      });
+
+      it('should handle single quantity items', () => {
+        orderItem.quantity = 1;
+        orderItem.unitPrice = 99.99;
+        const summary = orderItem.getSummary();
+        expect(summary).toBe('1 × 99.99€ = 99.99€');
+      });
+    });
+
+    describe('getTotalPrice() edge cases', () => {
+      it('should handle very small quantities', () => {
+        orderItem.quantity = 0.001;
+        orderItem.unitPrice = 1000;
+        expect(orderItem.getTotalPrice()).toBe(1); // 0.001 * 1000
+      });
+
+      it('should handle very large quantities', () => {
+        orderItem.quantity = 1000000;
+        orderItem.unitPrice = 0.01;
+        expect(orderItem.getTotalPrice()).toBe(10000); // 1000000 * 0.01
+      });
+
+      it('should handle high precision prices', () => {
+        orderItem.quantity = 3;
+        orderItem.unitPrice = 33.33333;
+        expect(orderItem.getTotalPrice()).toBeCloseTo(99.99999, 5);
+      });
+    });
+  });
 });

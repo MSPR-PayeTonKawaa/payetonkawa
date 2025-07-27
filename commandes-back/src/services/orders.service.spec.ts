@@ -553,4 +553,158 @@ describe('OrdersService', () => {
       );
     });
   });
+
+  describe('Error Handling and Edge Cases', () => {
+    describe('create() error scenarios', () => {
+      it('should handle case when OrderEventPublisher is null', async () => {
+        // Arrange
+        const createOrderDto = {
+          customerId: 'customer-uuid',
+          items: [
+            {
+              productId: 'product-uuid',
+              quantity: 2,
+              unitPrice: 24.99,
+            },
+          ],
+        };
+
+        orderRepository.create.mockReturnValue(mockOrder as any);
+        orderRepository.save.mockResolvedValue(mockOrder as any);
+
+        // Simuler OrderEventPublisher null
+        const serviceWithoutPublisher = new (require('./orders.service').OrdersService)(
+          orderRepository,
+          orderItemRepository,
+          null // OrderEventPublisher null
+        );
+
+        // Act
+        const result = await serviceWithoutPublisher.create(createOrderDto);
+
+        // Assert
+        expect(result).toBeDefined();
+        expect(orderRepository.save).toHaveBeenCalled();
+      });
+
+      it('should handle OrderEventPublisher error during creation', async () => {
+        // Arrange
+        const createOrderDto = {
+          customerId: 'customer-uuid',
+          items: [
+            {
+              productId: 'product-uuid',
+              quantity: 2,
+              unitPrice: 24.99,
+            },
+          ],
+        };
+
+        orderRepository.create.mockReturnValue(mockOrder as any);
+        orderRepository.save.mockResolvedValue(mockOrder as any);
+        orderEventPublisher.publishOrderCreated.mockRejectedValue(new Error('RabbitMQ error'));
+
+        // Act
+        const result = await service.create(createOrderDto);
+
+        // Assert
+        expect(result).toBeDefined();
+        expect(orderEventPublisher.publishOrderCreated).toHaveBeenCalled();
+        // La création devrait réussir malgré l'erreur de publication
+      });
+    });
+
+    describe('updateStatus() error scenarios', () => {
+      it('should handle OrderEventPublisher error during status update', async () => {
+        // Arrange
+        const updateStatusDto = { status: OrderStatus.CONFIRMED };
+        
+        orderRepository.findOne.mockResolvedValue(mockOrder as any);
+        orderRepository.save.mockResolvedValue({
+          ...mockOrder,
+          status: OrderStatus.CONFIRMED,
+        } as any);
+        orderEventPublisher.publishOrderStatusChanged.mockRejectedValue(new Error('RabbitMQ error'));
+
+        // Act
+        const result = await service.updateStatus('order-uuid', updateStatusDto);
+
+        // Assert
+        expect(result).toBeDefined();
+        expect(result.status).toBe(OrderStatus.CONFIRMED);
+        expect(orderEventPublisher.publishOrderStatusChanged).toHaveBeenCalled();
+        // La mise à jour devrait réussir malgré l'erreur de publication
+      });
+
+      it('should handle OrderEventPublisher error during cancellation', async () => {
+        // Arrange
+        const updateStatusDto = { status: OrderStatus.CANCELLED };
+        
+        orderRepository.findOne.mockResolvedValue(mockOrder as any);
+        orderRepository.save.mockResolvedValue({
+          ...mockOrder,
+          status: OrderStatus.CANCELLED,
+        } as any);
+        orderEventPublisher.publishOrderCancelled.mockRejectedValue(new Error('RabbitMQ error'));
+
+        // Act
+        const result = await service.updateStatus('order-uuid', updateStatusDto);
+
+        // Assert
+        expect(result).toBeDefined();
+        expect(result.status).toBe(OrderStatus.CANCELLED);
+        expect(orderEventPublisher.publishOrderCancelled).toHaveBeenCalled();
+        // La mise à jour devrait réussir malgré l'erreur de publication
+      });
+
+      it('should publish order cancelled event when updating to cancelled status', async () => {
+        // Arrange
+        const updateStatusDto = { status: OrderStatus.CANCELLED };
+        
+        // Mock avec statut initial PENDING pour permettre la transition vers CANCELLED
+        const pendingOrder = { ...mockOrder, status: OrderStatus.PENDING };
+        orderRepository.findOne.mockResolvedValue(pendingOrder as any);
+        orderRepository.save.mockResolvedValue({
+          ...pendingOrder,
+          status: OrderStatus.CANCELLED,
+        } as any);
+
+        // Act
+        await service.updateStatus('order-uuid', updateStatusDto);
+
+        // Assert
+        expect(orderEventPublisher.publishOrderCancelled).toHaveBeenCalledWith({
+          ...pendingOrder,
+          status: OrderStatus.CANCELLED,
+        });
+        expect(orderEventPublisher.publishOrderStatusChanged).not.toHaveBeenCalled();
+      });
+
+      it('should publish order status changed event for non-cancelled status', async () => {
+        // Arrange
+        const updateStatusDto = { status: OrderStatus.CONFIRMED };
+        
+        // Mock avec statut initial PENDING pour permettre la transition vers CONFIRMED
+        const pendingOrder = { ...mockOrder, status: OrderStatus.PENDING };
+        orderRepository.findOne.mockResolvedValue(pendingOrder as any);
+        orderRepository.save.mockResolvedValue({
+          ...pendingOrder,
+          status: OrderStatus.CONFIRMED,
+        } as any);
+
+        // Act
+        await service.updateStatus('order-uuid', updateStatusDto);
+
+        // Assert
+        expect(orderEventPublisher.publishOrderStatusChanged).toHaveBeenCalledWith(
+          {
+            ...pendingOrder,
+            status: OrderStatus.CONFIRMED,
+          },
+          OrderStatus.PENDING
+        );
+        expect(orderEventPublisher.publishOrderCancelled).not.toHaveBeenCalled();
+      });
+    });
+  });
 }); 

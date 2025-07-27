@@ -93,4 +93,7 @@ async function bootstrap() {
   }
 }
 
+// Exporter bootstrap pour les tests
+export default bootstrap;
+
 bootstrap();

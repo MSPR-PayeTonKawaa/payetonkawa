@@ -51,5 +51,6 @@ export class CreateProductDto {
   })
   @ValidateNested()
   @Type(() => CreateProductDetailsDto)
+  @IsNotEmpty({ message: 'Les détails du produit sont requis' })
   details: CreateProductDetailsDto;
 } 

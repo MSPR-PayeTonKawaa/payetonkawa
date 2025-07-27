@@ -271,4 +271,245 @@ describe('Order Entity', () => {
       expect(order.status).toBe(OrderStatus.CANCELLED);
     });
   });
+
+  describe('Business Methods - Advanced Coverage', () => {
+    let orderItem1: OrderItem;
+    let orderItem2: OrderItem;
+
+    beforeEach(() => {
+      orderItem1 = new OrderItem();
+      orderItem1.quantity = 2;
+      orderItem1.unitPrice = 25.99;
+
+      orderItem2 = new OrderItem();
+      orderItem2.quantity = 1;
+      orderItem2.unitPrice = 49.99;
+
+      order.items = [orderItem1, orderItem2];
+      order.status = OrderStatus.PENDING;
+    });
+
+    describe('confirm()', () => {
+      it('should confirm a pending order', () => {
+        order.status = OrderStatus.PENDING;
+        order.confirm();
+        expect(order.status).toBe(OrderStatus.CONFIRMED);
+      });
+
+      it('should throw error when trying to confirm non-pending order', () => {
+        order.status = OrderStatus.CONFIRMED;
+        expect(() => order.confirm()).toThrow('Seules les commandes en attente peuvent être confirmées');
+      });
+
+      it('should throw error when trying to confirm shipped order', () => {
+        order.status = OrderStatus.SHIPPED;
+        expect(() => order.confirm()).toThrow('Seules les commandes en attente peuvent être confirmées');
+      });
+
+      it('should throw error when trying to confirm delivered order', () => {
+        order.status = OrderStatus.DELIVERED;
+        expect(() => order.confirm()).toThrow('Seules les commandes en attente peuvent être confirmées');
+      });
+
+      it('should throw error when trying to confirm cancelled order', () => {
+        order.status = OrderStatus.CANCELLED;
+        expect(() => order.confirm()).toThrow('Seules les commandes en attente peuvent être confirmées');
+      });
+    });
+
+    describe('ship()', () => {
+      it('should ship a confirmed order', () => {
+        order.status = OrderStatus.CONFIRMED;
+        order.ship();
+        expect(order.status).toBe(OrderStatus.SHIPPED);
+      });
+
+      it('should throw error when trying to ship pending order', () => {
+        order.status = OrderStatus.PENDING;
+        expect(() => order.ship()).toThrow('Seules les commandes confirmées peuvent être expédiées');
+      });
+
+      it('should throw error when trying to ship already shipped order', () => {
+        order.status = OrderStatus.SHIPPED;
+        expect(() => order.ship()).toThrow('Seules les commandes confirmées peuvent être expédiées');
+      });
+
+      it('should throw error when trying to ship delivered order', () => {
+        order.status = OrderStatus.DELIVERED;
+        expect(() => order.ship()).toThrow('Seules les commandes confirmées peuvent être expédiées');
+      });
+
+      it('should throw error when trying to ship cancelled order', () => {
+        order.status = OrderStatus.CANCELLED;
+        expect(() => order.ship()).toThrow('Seules les commandes confirmées peuvent être expédiées');
+      });
+    });
+
+    describe('deliver()', () => {
+      it('should deliver a shipped order', () => {
+        order.status = OrderStatus.SHIPPED;
+        order.deliver();
+        expect(order.status).toBe(OrderStatus.DELIVERED);
+      });
+
+      it('should throw error when trying to deliver pending order', () => {
+        order.status = OrderStatus.PENDING;
+        expect(() => order.deliver()).toThrow('Seules les commandes expédiées peuvent être livrées');
+      });
+
+      it('should throw error when trying to deliver confirmed order', () => {
+        order.status = OrderStatus.CONFIRMED;
+        expect(() => order.deliver()).toThrow('Seules les commandes expédiées peuvent être livrées');
+      });
+
+      it('should throw error when trying to deliver already delivered order', () => {
+        order.status = OrderStatus.DELIVERED;
+        expect(() => order.deliver()).toThrow('Seules les commandes expédiées peuvent être livrées');
+      });
+
+      it('should throw error when trying to deliver cancelled order', () => {
+        order.status = OrderStatus.CANCELLED;
+        expect(() => order.deliver()).toThrow('Seules les commandes expédiées peuvent être livrées');
+      });
+    });
+
+    describe('cancel()', () => {
+      it('should cancel a pending order', () => {
+        order.status = OrderStatus.PENDING;
+        order.cancel();
+        expect(order.status).toBe(OrderStatus.CANCELLED);
+      });
+
+      it('should cancel a confirmed order', () => {
+        order.status = OrderStatus.CONFIRMED;
+        order.cancel();
+        expect(order.status).toBe(OrderStatus.CANCELLED);
+      });
+
+      it('should throw error when trying to cancel shipped order', () => {
+        order.status = OrderStatus.SHIPPED;
+        expect(() => order.cancel()).toThrow('Cette commande ne peut plus être annulée');
+      });
+
+      it('should throw error when trying to cancel delivered order', () => {
+        order.status = OrderStatus.DELIVERED;
+        expect(() => order.cancel()).toThrow('Cette commande ne peut plus être annulée');
+      });
+
+      it('should throw error when trying to cancel already cancelled order', () => {
+        order.status = OrderStatus.CANCELLED;
+        expect(() => order.cancel()).toThrow('Cette commande ne peut plus être annulée');
+      });
+    });
+
+    describe('isEmpty()', () => {
+      it('should return true for order with no items', () => {
+        order.items = [];
+        expect(order.isEmpty()).toBe(true);
+      });
+
+      it('should return true for order with undefined items', () => {
+        order.items = undefined as any;
+        expect(order.isEmpty()).toBe(true);
+      });
+
+      it('should return true for order with null items', () => {
+        order.items = null as any;
+        expect(order.isEmpty()).toBe(true);
+      });
+
+      it('should return false for order with items', () => {
+        order.items = [orderItem1];
+        expect(order.isEmpty()).toBe(false);
+      });
+    });
+
+    describe('updateTotal() hook', () => {
+      it('should update total amount when called', () => {
+        order.totalAmount = 0;
+        order.updateTotal();
+        expect(order.totalAmount).toBe(101.97); // (2 * 25.99) + (1 * 49.99)
+      });
+
+      it('should handle empty items in updateTotal', () => {
+        order.items = [];
+        order.totalAmount = 100;
+        order.updateTotal();
+        expect(order.totalAmount).toBe(0);
+      });
+
+      it('should handle undefined items in updateTotal', () => {
+        order.items = undefined as any;
+        order.totalAmount = 100;
+        order.updateTotal();
+        expect(order.totalAmount).toBe(0);
+      });
+    });
+
+    describe('Edge cases and boundary conditions', () => {
+      it('should handle calculateTotal with empty items', () => {
+        order.items = [];
+        expect(order.calculateTotal()).toBe(0);
+      });
+
+      it('should handle calculateTotal with null items', () => {
+        order.items = null as any;
+        expect(order.calculateTotal()).toBe(0);
+      });
+
+      it('should handle calculateTotal with undefined items', () => {
+        order.items = undefined as any;
+        expect(order.calculateTotal()).toBe(0);
+      });
+
+      it('should handle getTotalQuantity with empty items', () => {
+        order.items = [];
+        expect(order.getTotalQuantity()).toBe(0);
+      });
+
+      it('should handle getTotalQuantity with null items', () => {
+        order.items = null as any;
+        expect(order.getTotalQuantity()).toBe(0);
+      });
+
+      it('should handle getTotalQuantity with undefined items', () => {
+        order.items = undefined as any;
+        expect(order.getTotalQuantity()).toBe(0);
+      });
+
+      it('should handle canBeModified for all statuses', () => {
+        order.status = OrderStatus.PENDING;
+        expect(order.canBeModified()).toBe(true);
+
+        order.status = OrderStatus.CONFIRMED;
+        expect(order.canBeModified()).toBe(false);
+
+        order.status = OrderStatus.SHIPPED;
+        expect(order.canBeModified()).toBe(false);
+
+        order.status = OrderStatus.DELIVERED;
+        expect(order.canBeModified()).toBe(false);
+
+        order.status = OrderStatus.CANCELLED;
+        expect(order.canBeModified()).toBe(false);
+      });
+
+      it('should handle canBeCancelled for all statuses', () => {
+        order.status = OrderStatus.PENDING;
+        expect(order.canBeCancelled()).toBe(true);
+
+        order.status = OrderStatus.CONFIRMED;
+        expect(order.canBeCancelled()).toBe(true);
+
+        order.status = OrderStatus.SHIPPED;
+        expect(order.canBeCancelled()).toBe(false);
+
+        order.status = OrderStatus.DELIVERED;
+        expect(order.canBeCancelled()).toBe(false);
+
+        order.status = OrderStatus.CANCELLED;
+        expect(order.canBeCancelled()).toBe(false);
+      });
+    });
+  });
 });
